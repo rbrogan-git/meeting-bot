@@ -46,6 +46,22 @@ class FlightBookingRecognizer {
 
         return { to: toValue, airport: toAirportValue };
     }
+    getSubject(result) {
+        let subject;
+        if (result.entities.$instance.Calendar_Subject) {
+            subject = result.entities.$instance.Calendar_Subject[0].text;
+        }
+        return subject ;
+    }
+
+    
+    getAttendee(result) {
+        let attendee;
+        if (result.entities.$instance.personName) {
+            attendee = result.entities.$instance.personName[0].text;
+        }
+        return  attendee ;
+    }
 
     /**
      * This value will be a TIMEX. And we are only interested in a Date so grab the first result and drop the Time part.
@@ -60,6 +76,20 @@ class FlightBookingRecognizer {
 
         const datetime = timex[0].split('T')[0];
         return datetime;
+    }
+    getMeetingDateTime(result) {
+        const datetimeEntity = result.entities.datetime;
+        if (!datetimeEntity || !datetimeEntity[0]) return undefined;
+
+        const timex = datetimeEntity[0].timex;
+        if (!timex || !timex[0]) return undefined;
+
+        let startDate =  result.entities.$instance.Calendar_StartDate[0].text;
+        let startTime =  result.entities.$instance.Calendar_StartTime[0].text;
+    
+
+        
+        return {dateTime: timex[0], startDate:startDate, startTime: startTime};
     }
 }
 

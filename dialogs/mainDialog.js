@@ -9,18 +9,18 @@ const { ComponentDialog, DialogSet, DialogTurnStatus, TextPrompt, WaterfallDialo
 const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
 
 class MainDialog extends ComponentDialog {
-    constructor(luisRecognizer, bookingDialog) {
+    constructor(luisRecognizer, meetingDialog) {
         super('MainDialog');
 
         if (!luisRecognizer) throw new Error('[MainDialog]: Missing parameter \'luisRecognizer\' is required');
         this.luisRecognizer = luisRecognizer;
 
-        if (!bookingDialog) throw new Error('[MainDialog]: Missing parameter \'bookingDialog\' is required');
+        if (!meetingDialog) throw new Error('[MainDialog]: Missing parameter \'meetingDialog\' is required');
 
         // Define the main dialog and its related components.
         // This is a sample "book a flight" dialog.
         this.addDialog(new TextPrompt('TextPrompt'))
-            .addDialog(bookingDialog)
+            .addDialog(meetingDialog)
             .addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
                 this.introStep.bind(this),
                 this.actStep.bind(this),
@@ -59,7 +59,7 @@ class MainDialog extends ComponentDialog {
             return await stepContext.next();
         }
 
-        const messageText = stepContext.options.restartMsg ? stepContext.options.restartMsg : 'What can I help you with today?\nSay something like "Book a flight from Paris to Berlin on March 22, 2020"';
+        const messageText = stepContext.options.restartMsg ? stepContext.options.restartMsg : 'What can I help you with today?\nSay something like "Setup a lunch meeting with Tom for next Tuesday at Noon."';
         const promptMessage = MessageFactory.text(messageText, messageText, InputHints.ExpectingInput);
         return await stepContext.prompt('TextPrompt', { prompt: promptMessage });
     }
@@ -70,15 +70,35 @@ class MainDialog extends ComponentDialog {
      */
     async actStep(stepContext) {
         const bookingDetails = {};
+        const meetingDetails = {};
 
         if (!this.luisRecognizer.isConfigured) {
             // LUIS is not configured, we just run the BookingDialog path.
-            return await stepContext.beginDialog('bookingDialog', bookingDetails);
+            return await stepContext.beginDialog('meetingDialog', meetingDetails);
         }
 
         // Call LUIS and gather any potential booking details. (Note the TurnContext has the response to the prompt)
         const luisResult = await this.luisRecognizer.executeLuisQuery(stepContext.context);
         switch (LuisRecognizer.topIntent(luisResult)) {
+
+        case 'Calendar_CreateCalendarEntry': {
+            // Extract the values for the composite entities from the LUIS result.
+            const subject = this.luisRecognizer.getSubject(luisResult);
+            const attendee = this.luisRecognizer.getAttendee(luisResult);
+
+            // Show a warning for Origin and Destination if we can't resolve them.
+            //await this.showWarningForUnsupportedCities(stepContext.context, fromEntities, toEntities);
+
+            // Initialize BookingDetails with any entities we may have found in the response.
+            meetingDetails.subject = subject;
+            meetingDetails.attendee = attendee;
+            meetingDetails.meetingDateTime = this.luisRecognizer.getMeetingDateTime(luisResult);
+            console.log('LUIS extracted these meetingDetails details:', JSON.stringify(meetingDetails));
+
+            // Run the BookingDialog passing in whatever details we have from the LUIS call, it will fill out the remainder.
+            return await stepContext.beginDialog('meetingDialog', meetingDetails);
+        }
+
         case 'BookFlight': {
             // Extract the values for the composite entities from the LUIS result.
             const fromEntities = this.luisRecognizer.getFromEntities(luisResult);

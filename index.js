@@ -21,6 +21,10 @@ const { MainDialog } = require('./dialogs/mainDialog');
 const { BookingDialog } = require('./dialogs/bookingDialog');
 const BOOKING_DIALOG = 'bookingDialog';
 
+// the bot's booking dialog
+const { MeetingDialog } = require('./dialogs/meetingDialog');
+const MEETING_DIALOG = 'meetingDialog';
+
 // Note: Ensure you have a .env file and include LuisAppId, LuisAPIKey and LuisAPIHostName.
 const ENV_FILE = path.join(__dirname, '.env');
 require('dotenv').config({ path: ENV_FILE });
@@ -73,8 +77,9 @@ const luisConfig = { applicationId: LuisAppId, endpointKey: LuisAPIKey, endpoint
 const luisRecognizer = new FlightBookingRecognizer(luisConfig);
 
 // Create the main dialog.
-const bookingDialog = new BookingDialog(BOOKING_DIALOG);
-const dialog = new MainDialog(luisRecognizer, bookingDialog);
+//const bookingDialog = new BookingDialog(BOOKING_DIALOG);
+const meetingDialog = new MeetingDialog(MEETING_DIALOG);
+const dialog = new MainDialog(luisRecognizer, meetingDialog);
 const bot = new DialogAndWelcomeBot(conversationState, userState, dialog);
 
 // Create HTTP server
