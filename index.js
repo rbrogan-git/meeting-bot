@@ -21,7 +21,7 @@ const { MainDialog } = require('./dialogs/mainDialog');
 const { BookingDialog } = require('./dialogs/bookingDialog');
 const BOOKING_DIALOG = 'bookingDialog';
 
-// the bot's booking dialog
+// the bot's meeting dialog
 const { MeetingDialog } = require('./dialogs/meetingDialog');
 const MEETING_DIALOG = 'meetingDialog';
 
