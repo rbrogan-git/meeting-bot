@@ -84,12 +84,8 @@ class FlightBookingRecognizer {
         const timex = datetimeEntity[0].timex;
         if (!timex || !timex[0]) return undefined;
 
-        let startDate =  result.entities.$instance.Calendar_StartDate[0].text;
-        let startTime =  result.entities.$instance.Calendar_StartTime[0].text;
-    
-
         
-        return {dateTime: timex[0], startDate:startDate, startTime: startTime};
+        return timex[0];
     }
 }
 

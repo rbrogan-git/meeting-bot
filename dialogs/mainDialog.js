@@ -160,18 +160,21 @@ class MainDialog extends ComponentDialog {
      * It wraps up the sample "book a flight" interaction with a simple confirmation.
      */
     async finalStep(stepContext) {
-        // If the child dialog ("bookingDialog") was cancelled or the user failed to confirm, the Result here will be null.
+        // If the child dialog ("meetingDialog") was cancelled or the user failed to confirm, the Result here will be null.
         if (stepContext.result) {
-            const result = stepContext.result;
-            // Now we have all the booking details.
+            const meetingDetails = stepContext.result;
+            // Now we have all the meeting details.
 
-            // This is where calls to the booking AOU service or database would go.
+            // This is where calls to the meeting service or database would go.
 
-            // If the call to the booking service was successful tell the user.
-            const timeProperty = new TimexProperty(result.travelDate);
+            // If the call to the meeting service was successful tell the user.
+   
+            const timeProperty = new TimexProperty(meetingDetails.meetingDateTime.dateTime);
             const travelDateMsg = timeProperty.toNaturalLanguage(new Date(Date.now()));
-            const msg = `I have you booked to ${ result.destination } from ${ result.origin } on ${ travelDateMsg }.`;
-            await stepContext.context.sendActivity(msg, msg, InputHints.IgnoringInput);
+      
+            const messageText = `Confirmed, a ${ meetingDetails.subject } with ${ meetingDetails.attendee } on ${ meetingDetails.meetingDateMsg}.`;
+ 
+            await stepContext.context.sendActivity(messageText, messageText, InputHints.IgnoringInput);
         }
 
         // Restart the main dialog with a different message the second time around

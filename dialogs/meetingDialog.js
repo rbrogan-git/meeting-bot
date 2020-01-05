@@ -69,7 +69,7 @@ class MeetingDialog extends CancelAndHelpDialog {
 
         // Capture the results of the previous step
         meetingDetails.attendee = stepContext.result;
-        if (!meetingDetails.meetingDateTime || this.isAmbiguous(meetingDetails.meetingDateTime.dateTime)) {
+        if (!meetingDetails.meetingDateTime || this.isAmbiguous(meetingDetails.meetingDateTime)) {
             return await stepContext.beginDialog(DATE_RESOLVER_DIALOG, { date: meetingDetails.meetingDateTime });
         }
         return await stepContext.next(meetingDetails.meetingDateTime);
@@ -83,7 +83,9 @@ class MeetingDialog extends CancelAndHelpDialog {
 
         // Capture the results of the previous step
         meetingDetails.meetingDateTime = stepContext.result;
-        const messageText = `Please confirm, I will setup a ${ meetingDetails.subject } with: ${ meetingDetails.attendee } on: ${ meetingDetails.meetingDateTime.startDate } at: ${meetingDetails.meetingDateTime.startTime}. Is this correct?`;
+        const timeProperty = new TimexProperty(meetingDetails.meetingDateTime);
+        meetingDetails.meetingDateMsg = timeProperty.toNaturalLanguage(new Date(Date.now()));
+        const messageText = `Please confirm, I will setup a ${ meetingDetails.subject } with ${ meetingDetails.attendee } on ${ meetingDetails.meetingDateMsg}. Is this correct?`;
         const msg = MessageFactory.text(messageText, messageText, InputHints.ExpectingInput);
 
         // Offer a YES/NO prompt.
@@ -103,7 +105,8 @@ class MeetingDialog extends CancelAndHelpDialog {
 
     isAmbiguous(timex) {
         const timexPropery = new TimexProperty(timex);
-        return !timexPropery.types.has('definite');
+        const valid = timexPropery.types.has('definite') && timexPropery.types.has('datetime');
+        return !valid;
     }
 }
 
