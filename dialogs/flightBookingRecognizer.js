@@ -3,6 +3,7 @@
 
 const { LuisRecognizer } = require('botbuilder-ai');
 
+
 class FlightBookingRecognizer {
     constructor(config) {
         const luisIsConfigured = config && config.applicationId && config.endpointKey && config.endpoint;

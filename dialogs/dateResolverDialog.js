@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 const { InputHints, MessageFactory } = require('botbuilder');
+
 const { DateTimePrompt, WaterfallDialog } = require('botbuilder-dialogs');
 const { CancelAndHelpDialog } = require('./cancelAndHelpDialog');
 const { TimexProperty } = require('@microsoft/recognizers-text-data-types-timex-expression');
@@ -49,7 +50,7 @@ class DateResolverDialog extends CancelAndHelpDialog {
     }
 
     async finalStep(stepContext) {
-        const timex = stepContext.result[0].timex;
+        const timex = stepContext.result[0].value;
         return await stepContext.endDialog(timex);
     }
 

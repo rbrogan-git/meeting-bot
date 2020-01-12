@@ -3,7 +3,7 @@
 
 const { TimexProperty } = require('@microsoft/recognizers-text-data-types-timex-expression');
 const { InputHints, MessageFactory } = require('botbuilder');
-const { ConfirmPrompt, TextPrompt, WaterfallDialog } = require('botbuilder-dialogs');
+const { ConfirmPrompt, TextPrompt, WaterfallDialog, ChoicePrompt, OAuthPrompt } = require('botbuilder-dialogs');
 const { CancelAndHelpDialog } = require('./cancelAndHelpDialog');
 const { DateResolverDialog } = require('./dateResolverDialog');
 const { EmailResolverDialog } = require('./emailResolverDialog');
@@ -11,7 +11,10 @@ const { EmailResolverDialog } = require('./emailResolverDialog');
 const CONFIRM_PROMPT = 'confirmPrompt';
 const DATE_RESOLVER_DIALOG = 'dateResolverDialog';
 const EMAIL_RESOLVER_DIALOG = 'emailResolverDialog';
+const OAUTH_PROMPT = 'oAuthPrompt';
 const TEXT_PROMPT = 'textPrompt';
+const CHOICE_PROMPT = 'choicePrompt';
+const { OAuthHelpers } = require('../oAuthHelpers');
 const WATERFALL_DIALOG = 'waterfallDialog';
 
 class MeetingDialog extends CancelAndHelpDialog {
@@ -22,7 +25,16 @@ class MeetingDialog extends CancelAndHelpDialog {
             .addDialog(new ConfirmPrompt(CONFIRM_PROMPT))
             .addDialog(new DateResolverDialog(DATE_RESOLVER_DIALOG))
             .addDialog(new EmailResolverDialog(EMAIL_RESOLVER_DIALOG))
+            .addDialog(new ChoicePrompt(CHOICE_PROMPT))
+            .addDialog(new OAuthPrompt(OAUTH_PROMPT, {
+                connectionName: process.env.ConnectionName,
+                text: 'Please login',
+                title: 'Login',
+                timeout: 300000
+            }))
             .addDialog(new WaterfallDialog(WATERFALL_DIALOG, [
+                this.promptStep.bind(this),
+                this.loginStep.bind(this),
                 this.subjectStep.bind(this),
                 this.attendeeStep.bind(this),
                 this.emailStep.bind(this),
@@ -33,13 +45,29 @@ class MeetingDialog extends CancelAndHelpDialog {
 
         this.initialDialogId = WATERFALL_DIALOG;
     }
+    async promptStep(stepContext) {
+        return stepContext.beginDialog(OAUTH_PROMPT);
+    }
 
+    async loginStep(stepContext) {
+        // Get the token from the previous step. Note that we could also have gotten the
+        // token directly from the prompt itself. There is an example of this in the next method.
+        
+        const meetingDetails = stepContext.options;
+        meetingDetails.tokenResponse = stepContext.result;
+        if (meetingDetails.tokenResponse) {
+            return await stepContext.next(meetingDetails.tokenResponse);
+            //return await step.prompt(TEXT_PROMPT, { prompt: 'Would you like to do? (type \'me\', \'send <EMAIL>\' or \'recent\')' });
+        }
+      await stepContext.sendActivity('Login was not successful please try again.');
+        return await stepContext.endDialog();
+    }
     /**
      * If a subject has not been provided, prompt for one.
      */
     async subjectStep(stepContext) {
         const meetingDetails = stepContext.options;
-
+        meetingDetails.tokenResponse = stepContext.result;
         if (!meetingDetails.subject) {
             const messageText = 'What is the subject for your meeting?';
             const msg = MessageFactory.text(messageText, messageText, InputHints.ExpectingInput);

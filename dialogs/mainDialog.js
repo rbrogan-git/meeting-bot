@@ -2,11 +2,17 @@
 // Licensed under the MIT License.
 
 const { TimexProperty } = require('@microsoft/recognizers-text-data-types-timex-expression');
+
+
 const { MessageFactory, InputHints } = require('botbuilder');
 const { LuisRecognizer } = require('botbuilder-ai');
-const { ComponentDialog, DialogSet, DialogTurnStatus, TextPrompt, WaterfallDialog } = require('botbuilder-dialogs');
+const { ComponentDialog, DialogSet, DialogTurnStatus, TextPrompt, WaterfallDialog, OAuthPrompt, ChoicePrompt} = require('botbuilder-dialogs');
 
 const MAIN_WATERFALL_DIALOG = 'mainWaterfallDialog';
+const OAUTH_PROMPT = 'oAuthPrompt';
+const TEXT_PROMPT = 'textPrompt';
+const CHOICE_PROMPT = 'choicePrompt';
+const { OAuthHelpers } = require('../oAuthHelpers');
 
 class MainDialog extends ComponentDialog {
     constructor(luisRecognizer, meetingDialog) {
@@ -19,7 +25,7 @@ class MainDialog extends ComponentDialog {
 
         // Define the main dialog and its related components.
         // This is a sample "book a flight" dialog.
-        this.addDialog(new TextPrompt('TextPrompt'))
+        this.addDialog(new TextPrompt(TEXT_PROMPT))
             .addDialog(meetingDialog)
             .addDialog(new WaterfallDialog(MAIN_WATERFALL_DIALOG, [
                 this.introStep.bind(this),
@@ -61,7 +67,7 @@ class MainDialog extends ComponentDialog {
 
         const messageText = stepContext.options.restartMsg ? stepContext.options.restartMsg : 'What can I help you with today?\nSay something like "Setup a lunch meeting with Tom for next Tuesday at Noon."';
         const promptMessage = MessageFactory.text(messageText, messageText, InputHints.ExpectingInput);
-        return await stepContext.prompt('TextPrompt', { prompt: promptMessage });
+        return await stepContext.prompt(TEXT_PROMPT, { prompt: promptMessage });
     }
 
     /**
@@ -164,13 +170,15 @@ class MainDialog extends ComponentDialog {
         if (stepContext.result) {
             const meetingDetails = stepContext.result;
             // Now we have all the meeting details.
-
+            const timeProperty = new TimexProperty(meetingDetails.meetingDateTime);
+            const travelDateMsg = timeProperty.toNaturalLanguage(new Date(Date.now()));
             // This is where calls to the meeting service or database would go.
 
             // If the call to the meeting service was successful tell the user.
+
+            await OAuthHelpers.createEvent(stepContext, meetingDetails);
    
-            const timeProperty = new TimexProperty(meetingDetails.meetingDateTime.dateTime);
-            const travelDateMsg = timeProperty.toNaturalLanguage(new Date(Date.now()));
+            
       
             const messageText = `Confirmed, a ${ meetingDetails.subject } with ${ meetingDetails.attendee } on ${ meetingDetails.meetingDateMsg}.`;
  
