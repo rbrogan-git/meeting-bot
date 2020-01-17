@@ -22,6 +22,15 @@ class DialogAndWelcomeBot extends DialogBot {
             // By calling next() you ensure that the next BotHandler is run.
             await next();
         });
+        this.onTokenResponseEvent(async (context, next) => {
+            console.log('Running dialog with Token Response Event Activity.');
+
+            // Run the Dialog with the new Token Response Event Activity.
+            await this.dialog.run(context, this.dialogState);
+
+            // By calling next() you ensure that the next BotHandler is run.
+            await next();
+        });
     }
 }
 
