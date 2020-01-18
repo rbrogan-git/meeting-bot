@@ -45,7 +45,10 @@ class EmailResolverDialog extends CancelAndHelpDialog {
     }
 
     async finalStep(stepContext) {
-        const email = stepContext.result;
+        var email = stepContext.result;
+        if (email[email.length-1] === "."){ // remove trailing .
+            email = email.slice(0,-1);
+        }
         return await stepContext.endDialog(email);
     }
 
